@@ -1,3 +1,5 @@
+#include <climits>
+
 #include "BTSolver.hpp"
 
 using namespace std;
