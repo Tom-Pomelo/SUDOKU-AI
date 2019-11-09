@@ -75,10 +75,36 @@ bool BTSolver::arcConsistency(void) {
  *     the square's neighbors.
  *
  * Note: remember to trail.push variables before you change their domain
- * Return: true is assignment is consistent, false otherwise
+ * Return: a pair of a map and a bool. The map contains the pointers to all
+ * MODIFIED variables, mapped to their MODIFIED domain. The bool is true if
+ * assignment is consistent, false otherwise.
  */
 pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
-  return make_pair(map<Variable*, Domain>(), false);
+  map<Variable*, Domain> m;
+  bool flag = true;
+  VariableSet vset = network.getVariables();
+  for (Variable* v : vset) {
+    if (!v->isAssigned()) {
+      VariableSet neighbors = network.getNeighborsOfVariable(v);
+      for (Variable* neighbor : neighbors) {
+        if (neighbor->isAssigned()) {
+          int val = neighbor->getAssignment();
+          if (v->getDomain().contains(val)) {
+            trail->push(v);
+            v->removeValueFromDomain(val);
+          }
+        }
+      }
+    }
+    m.insert(make_pair(v, v->getDomain()));
+  }
+  for (auto it = m.begin(); it != m.end(); ++it) {
+    if (it->second.size() == 0) {
+      flag = false;
+      break;
+    }
+  }
+  return make_pair(map<Variable*, Domain>(), flag);
 }
 
 /**
@@ -127,19 +153,24 @@ Variable* BTSolver::getfirstUnassignedVariable(void) {
  * Return: The unassigned variable with the smallest domain
  */
 
-bool cmp_domain(pair<int, Variable*>& a, pair<int, Variable*>& b) {
+bool CMP_domain_size(pair<int, Variable*>& a, pair<int, Variable*>& b) {
   return a.first < b.first;
 }
 
 Variable* BTSolver::getMRV(void) {
-  priority_queue<pair<int, Variable*>, vector<pair<int, Variable*>>, cmp_domain>
+  priority_queue<pair<int, Variable*>, vector<pair<int, Variable*>>,
+                 CMP_domain_size>
       pq;
   VariableSet vset = network.getVariables();
   for (Variable* v : vset) {
     if (!v->isAssigned()) {
+      int domain_size = v->size();
+      pair<int, Variable*> curr = make_pair(domain_size, v);
+      pq.push(curr);
     }
   }
-  return nullptr;
+  Variable* v = pq.top();
+  return v;
 }
 
 /**
