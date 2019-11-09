@@ -82,11 +82,9 @@ bool BTSolver::arcConsistency(void) {
 pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
   map<Variable*, Domain> m;
   bool flag = true;
-  VariableSet vset = network.getVariables();
-  for (Variable* v : vset) {
+  for (Variable* v : network.getVariables()) {
     if (!v->isAssigned()) {
-      VariableSet neighbors = network.getNeighborsOfVariable(v);
-      for (Variable* neighbor : neighbors) {
+      for (Variable* neighbor : network.getNeighborsOfVariable(v)) {
         if (neighbor->isAssigned()) {
           int val = neighbor->getAssignment();
           if (v->getDomain().contains(val)) {
@@ -158,18 +156,14 @@ bool CMP_domain_size(pair<int, Variable*>& a, pair<int, Variable*>& b) {
 }
 
 Variable* BTSolver::getMRV(void) {
-  priority_queue<pair<int, Variable*>, vector<pair<int, Variable*>>,
-                 CMP_domain_size>
-      pq;
-  VariableSet vset = network.getVariables();
-  for (Variable* v : vset) {
-    if (!v->isAssigned()) {
-      int domain_size = v->size();
-      pair<int, Variable*> curr = make_pair(domain_size, v);
-      pq.push(curr);
+  Variable* v = nullptr;
+  int n_remaining_value = INT_MAX;
+  for (auto node : network.getVariables()) {
+    if (!node->isAssigned() && node->size() < n_remaining_value) {
+      v = node;
+      n_remaining_value = node->size();
     }
   }
-  Variable* v = pq.top();
   return v;
 }
 
