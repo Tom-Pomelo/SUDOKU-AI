@@ -1,4 +1,5 @@
 #include <climits>
+#include <unordered_map>
 
 #include "BTSolver.hpp"
 
@@ -208,7 +209,28 @@ vector<int> BTSolver::getValuesInOrder(Variable* v) {
  * Return: A list of v's domain sorted by the LCV heuristic
  *         The LCV is first and the MCV is last
  */
-vector<int> BTSolver::getValuesLCVOrder(Variable* v) { return vector<int>(); }
+vector<int> BTSolver::getValuesLCVOrder(Variable* v) {
+  // preprocess, count value occurence in every neighbor's domain
+  unordered_map<int, int> occ;
+  for (Variable* neighbor : network.getNeighborsOfVariable(v)) {
+    if (neighbor->isAssigned()) continue;
+    for (int val : neighbor->getValues()) occ[val]++;
+  }
+
+  // put the count for each value of v into priority queue
+  vector<pair<int, int>> temp;
+  for (int val : v->getValues()) temp.push_back(make_pair(val, occ[val]));
+  auto cmp = [](pair<int, int> left, pair<int, int> right) {
+    return left.second != right.second ? left.second < right.second
+                                       : left.first < right.first;
+  };
+  sort(temp.begin(), temp.end(), cmp);
+
+  // get the values with the order of LCV to MCV
+  vector<int> res;
+  for (pair<int, int> p : temp) res.push_back(p.first);
+  return res;
+}
 
 /**
  * Optional TODO: Implement your own advanced Value Heuristic
