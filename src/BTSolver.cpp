@@ -86,26 +86,23 @@ pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
   map<Variable*, Domain> m;
   bool flag = true;
   for (Variable* v : network.getVariables()) {
-    if (!v->isAssigned()) {
+    if (v->isAssigned()) {
       for (Variable* neighbor : network.getNeighborsOfVariable(v)) {
-        if (neighbor->isAssigned()) {
-          int val = neighbor->getAssignment();
-          if (v->getDomain().contains(val)) {
-            trail->push(v);
-            v->removeValueFromDomain(val);
-          }
+        if (neighbor->getDomain().contains(v->getAssignment())) {
+          trail->push(neighbor);
+          neighbor->removeValueFromDomain(v->getAssignment());
+          m[neighbor] = neighbor->getDomain();
         }
       }
     }
-    m.insert(make_pair(v, v->getDomain()));
   }
-  for (auto it = m.begin(); it != m.end(); ++it) {
-    if (it->second.size() == 0) {
+  for (Constraint* c : network.getModifiedConstraints()) {
+    if (!c->isConsistent()) {
       flag = false;
       break;
     }
   }
-  return make_pair(map<Variable*, Domain>(), flag);
+  return make_pair(m, flag);
 }
 
 /**
@@ -153,10 +150,6 @@ Variable* BTSolver::getfirstUnassignedVariable(void) {
  *
  * Return: The unassigned variable with the smallest domain
  */
-
-bool CMP_domain_size(pair<int, Variable*>& a, pair<int, Variable*>& b) {
-  return a.first < b.first;
-}
 
 Variable* BTSolver::getMRV(void) {
   Variable* v = nullptr;
