@@ -69,7 +69,7 @@ bool BTSolver::arcConsistency(void) {
 }
 
 /**
- * Part 1 TODO: Implement the Forward Checking Heuristic
+ * Part 1 Implement the Forward Checking Heuristic
  *
  * This function will do both Constraint Propagation and check
  * the consistency of the network
@@ -118,7 +118,10 @@ pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
  *     then put the value there.
  *
  * Note: remember to trail.push variables before you change their domain
- * Return: true is assignment is consistent, false otherwise
+ * Return: a pair of a map and a bool. The map contains the pointers to all
+ * variables that were assigned during the whole NorvigCheck propagation, and
+ * mapped to the values that they were assigned. The bool is true if assignment
+ * is consistent, false otherwise.
  */
 pair<map<Variable*, int>, bool> BTSolver::norvigCheck(void) {
   return make_pair(map<Variable*, int>(), false);
@@ -146,7 +149,7 @@ Variable* BTSolver::getfirstUnassignedVariable(void) {
 }
 
 /**
- * Part 1 TODO: Implement the Minimum Remaining Value Heuristic
+ * Part 1 Implement the Minimum Remaining Value Heuristic
  *
  * Return: The unassigned variable with the smallest domain
  */
@@ -167,8 +170,11 @@ Variable* BTSolver::getMRV(void) {
  * Part 2 TODO: Implement the Minimum Remaining Value Heuristic
  *                with Degree Heuristic as a Tie Breaker
  *
- * Return: The unassigned variable with the smallest domain and involved
- *             in the most constraints
+ * Return: The unassigned variable with the smallest domain and affecting the
+ * most unassigned neighbors. If there are multiple variables that have the same
+ * smallest domain with the same number of unassigned neighbors, add them to the
+ * vector of Variables. If there is only one variable, return the vector of size
+ * 1 containing that variable.
  */
 vector<Variable*> BTSolver::MRVwithTieBreaker(void) {
   return vector<Variable*>();
@@ -194,7 +200,7 @@ vector<int> BTSolver::getValuesInOrder(Variable* v) {
 }
 
 /**
- * Part 1 TODO: Implement the Least Constraining Value Heuristic
+ * Part 1 Implement the Least Constraining Value Heuristic
  *
  * The Least constraining value is the one that will knock the least
  * values out of it's neighbors domain.
@@ -237,8 +243,12 @@ vector<int> BTSolver::getTournVal(Variable* v) { return vector<int>(); }
 // Engine Functions
 // =====================================================================
 
-void BTSolver::solve(void) {
-  if (hasSolution) return;
+int BTSolver::solve(float time_left) {
+  if (time_left <= 60.0) return -1;
+  double elapsed_time = 0.0;
+  clock_t begin_clock = clock();
+
+  if (hasSolution) return 0;
 
   // Variable Selection
   Variable* v = selectNextVariable();
@@ -247,14 +257,13 @@ void BTSolver::solve(void) {
     for (Variable* var : network.getVariables()) {
       // If all variables haven't been assigned
       if (!(var->isAssigned())) {
-        cout << "Error" << endl;
-        return;
+        return 0;
       }
     }
 
     // Success
     hasSolution = true;
-    return;
+    return 0;
   }
 
   // Attempt to assign a value
@@ -267,14 +276,23 @@ void BTSolver::solve(void) {
     v->assignValue(i);
 
     // Propagate constraints, check consistency, recurse
-    if (checkConsistency()) solve();
+    if (checkConsistency()) {
+      clock_t end_clock = clock();
+      elapsed_time += (float)(end_clock - begin_clock) / CLOCKS_PER_SEC;
+      double new_start_time = time_left - elapsed_time;
+      int check_status = solve(new_start_time);
+      if (check_status == -1) {
+        return -1;
+      }
+    }
 
     // If this assignment succeeded, return
-    if (hasSolution) return;
+    if (hasSolution) return 0;
 
     // Otherwise backtrack
     trail->undo();
   }
+  return 0;
 }
 
 bool BTSolver::checkConsistency(void) {

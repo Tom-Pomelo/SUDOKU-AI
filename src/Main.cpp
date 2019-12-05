@@ -68,7 +68,7 @@ int main ( int argc, char *argv[] )
 		BTSolver solver = BTSolver( board, &trail, val_sh, var_sh, cc );
 		if (cc == "forwardChecking" or cc == "norvigCheck" or cc == "tournCC")
             solver.checkConsistency();
-		solver.solve();
+		solver.solve(600.0);
 
 		if ( solver.haveSolution() )
 		{
@@ -115,7 +115,7 @@ int main ( int argc, char *argv[] )
 			BTSolver solver = BTSolver( board, &trail, val_sh, var_sh, cc );
 			if (cc == "forwardChecking" or cc == "norvigCheck" or cc == "tournCC")
 	            solver.checkConsistency();
-			solver.solve();
+			solver.solve(600.0);
 
 			if ( solver.haveSolution() )
 				numSolutions++;
@@ -137,7 +137,7 @@ int main ( int argc, char *argv[] )
 	BTSolver solver = BTSolver( board, &trail, val_sh, var_sh, cc );
 	if (cc == "forwardChecking" or cc == "norvigCheck" or cc == "tournCC")
 					solver.checkConsistency();
-	solver.solve();
+	solver.solve(600.0);
 
 	if ( solver.haveSolution() )
 	{
