@@ -22,6 +22,7 @@ public:
 	typedef ValueSet::iterator iterator;
 
 	// Constructors
+	Domain() = default;
 	Domain ( int value );
 	Domain ( ValueSet values );
 	Domain ( const Domain& d );
