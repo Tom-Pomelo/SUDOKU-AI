@@ -1,5 +1,7 @@
 #include <climits>
 #include <unordered_map>
+#include <unordered_set>
+#include <iostream> // TODO: debug
 
 #include "BTSolver.hpp"
 
@@ -124,7 +126,39 @@ pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
  * is consistent, false otherwise.
  */
 pair<map<Variable*, int>, bool> BTSolver::norvigCheck(void) {
-  return make_pair(map<Variable*, int>(), false);
+  // do FC
+  for (Variable* v : network.getVariables()) {
+    if (v->isAssigned()) {
+      for (Variable* neighbor : network.getNeighborsOfVariable(v)) {
+        if (neighbor->getDomain().contains(v->getAssignment())) {
+          trail->push(neighbor);
+          neighbor->removeValueFromDomain(v->getAssignment());
+        }
+      }
+    }
+  }
+
+  // check if a value can be placed in a contraint
+  map<Variable*, int> m;
+  for (Constraint* c : network.getModifiedConstraints()) {
+    // get all values and var
+    vector<pair<int, vector<Variable*>>> store;
+    for (Variable* var : c->vars) {
+      for (int val : var->getValues()) {
+        
+      }
+    }
+    // for each value check if it can be assigned to a variable
+    // for (const auto& p : store) {
+    //   if (p.second == nullptr) continue;
+    //   Variable* var = p.second;
+    //   int val = p.first;
+    //   // trail->push(var);
+    //   var->assignValue(val);
+    //   m[var] = val;
+    // }
+  }
+  return make_pair(m, network.isConsistent());
 }
 
 /**
@@ -177,7 +211,43 @@ Variable* BTSolver::getMRV(void) {
  * 1 containing that variable.
  */
 vector<Variable*> BTSolver::MRVwithTieBreaker(void) {
-  return vector<Variable*>();
+  unordered_map<Variable*, pair<int, int>> map;
+  // get remain value of all variables
+  for (auto v : network.getVariables()) {
+    if (v->isAssigned()) continue;
+    map[v].first = v->size();
+  }
+  // get degree of all variables
+  for (auto c : network.getConstraints()) {
+    int unassigned = 0;
+    for (auto v : c.vars) if (!v->isAssigned()) unassigned++;
+    for (auto v : c.vars) {
+      if (v->isAssigned()) continue;
+      map[v].second += unassigned - 1;
+    }
+  }
+  // find the selected variables
+  int min_rem_val = INT_MAX;
+  int max_degree = 0;
+  for (auto p : map) {
+    int rem_val = p.second.first;
+    int degree = p.second.second;
+    if (rem_val < min_rem_val) {
+      min_rem_val = rem_val;
+      max_degree = degree;
+    } else if (rem_val == min_rem_val) {
+      if (degree > max_degree) max_degree = degree;
+    }
+  }
+  vector<Variable*> vars;
+  for (auto p : map) {
+    Variable* v = p.first;
+    int rem_val = p.second.first;
+    int degree = p.second.second;
+    if (rem_val == min_rem_val && degree == max_degree) vars.push_back(v);
+  }
+  if (vars.empty()) vars.push_back(nullptr);
+  return vars;
 }
 
 /**
