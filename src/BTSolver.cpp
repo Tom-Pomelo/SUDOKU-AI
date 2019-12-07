@@ -1,7 +1,6 @@
 #include <climits>
 #include <unordered_map>
 #include <unordered_set>
-#include <iostream> // TODO: debug
 
 #include "BTSolver.hpp"
 
@@ -90,6 +89,7 @@ pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
   for (Variable* v : network.getVariables()) {
     if (v->isAssigned()) {
       for (Variable* neighbor : network.getNeighborsOfVariable(v)) {
+        if (neighbor->isAssigned()) continue;
         if (neighbor->getDomain().contains(v->getAssignment())) {
           trail->push(neighbor);
           neighbor->removeValueFromDomain(v->getAssignment());
@@ -108,7 +108,7 @@ pair<map<Variable*, Domain>, bool> BTSolver::forwardChecking(void) {
 }
 
 /**
- * Part 2 TODO: Implement both of Norvig's Heuristics
+ * Part 2 Implement both of Norvig's Heuristics
  *
  * This function will do both Constraint Propagation and check
  * the consistency of the network
@@ -130,6 +130,7 @@ pair<map<Variable*, int>, bool> BTSolver::norvigCheck(void) {
   for (Variable* v : network.getVariables()) {
     if (v->isAssigned()) {
       for (Variable* neighbor : network.getNeighborsOfVariable(v)) {
+        if (neighbor->isAssigned()) continue;
         if (neighbor->getDomain().contains(v->getAssignment())) {
           trail->push(neighbor);
           neighbor->removeValueFromDomain(v->getAssignment());
@@ -142,21 +143,20 @@ pair<map<Variable*, int>, bool> BTSolver::norvigCheck(void) {
   map<Variable*, int> m;
   for (Constraint* c : network.getModifiedConstraints()) {
     // get all values and var
-    vector<pair<int, vector<Variable*>>> store;
+    unordered_map<int, vector<Variable*>> store;
     for (Variable* var : c->vars) {
-      for (int val : var->getValues()) {
-        
-      }
+      if (var->isAssigned()) continue;
+      for (int val : var->getValues()) store[val].push_back(var);
     }
     // for each value check if it can be assigned to a variable
-    // for (const auto& p : store) {
-    //   if (p.second == nullptr) continue;
-    //   Variable* var = p.second;
-    //   int val = p.first;
-    //   // trail->push(var);
-    //   var->assignValue(val);
-    //   m[var] = val;
-    // }
+    for (auto p : store) {
+      if (p.second.size() != 1) continue;
+      Variable* var = p.second[0];
+      int val = p.first;
+      trail->push(var);
+      var->assignValue(val);
+      m[var] = val;
+    }
   }
   return make_pair(m, network.isConsistent());
 }
@@ -201,7 +201,7 @@ Variable* BTSolver::getMRV(void) {
 }
 
 /**
- * Part 2 TODO: Implement the Minimum Remaining Value Heuristic
+ * Part 2 Implement the Minimum Remaining Value Heuristic
  *                with Degree Heuristic as a Tie Breaker
  *
  * Return: The unassigned variable with the smallest domain and affecting the
