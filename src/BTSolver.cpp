@@ -167,7 +167,7 @@ pair<map<Variable*, int>, bool> BTSolver::norvigCheck(void) {
  * Completing the three tourn heuristic will automatically enter
  * your program into a tournament.
  */
-bool BTSolver::getTournCC(void) { return false; }
+bool BTSolver::getTournCC(void) { return norvigCheck().second; }
 
 // =====================================================================
 // Variable Selectors
@@ -220,7 +220,8 @@ vector<Variable*> BTSolver::MRVwithTieBreaker(void) {
   // get degree of all variables
   for (auto c : network.getConstraints()) {
     int unassigned = 0;
-    for (auto v : c.vars) if (!v->isAssigned()) unassigned++;
+    for (auto v : c.vars)
+      if (!v->isAssigned()) unassigned++;
     for (auto v : c.vars) {
       if (v->isAssigned()) continue;
       map[v].second += unassigned - 1;
@@ -256,7 +257,7 @@ vector<Variable*> BTSolver::MRVwithTieBreaker(void) {
  * Completing the three tourn heuristic will automatically enter
  * your program into a tournament.
  */
-Variable* BTSolver::getTournVar(void) { return nullptr; }
+Variable* BTSolver::getTournVar(void) { return getMRV(); }
 
 // =====================================================================
 // Value Selectors
@@ -307,7 +308,7 @@ vector<int> BTSolver::getValuesLCVOrder(Variable* v) {
  * Completing the three tourn heuristic will automatically enter
  * your program into a tournament.
  */
-vector<int> BTSolver::getTournVal(Variable* v) { return vector<int>(); }
+vector<int> BTSolver::getTournVal(Variable* v) { return getValuesLCVOrder(v); }
 
 // =====================================================================
 // Engine Functions
